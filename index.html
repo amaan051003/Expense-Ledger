@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF_8">
+    <title>Expense Ledger</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="shortcut icon" href="payment.png" type="image/x-icon">
+    <style>
+        :root {
+            --page-bg: #18140f;
+            --paper: #f7f2e7;
+            --ink: #2b2620;
+            --ink-soft: #8a7f6e;
+            --rust: #a8402f;
+            --green: #2e6f4d;
+            --line: #d8ccb4;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background:
+                radial-gradient(ellipse at top, #221b13 0%, var(--page-bg) 60%);
+            font-family: 'Space Mono', monospace;
+            color: var(--ink);
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 48px 16px 80px;
+        }
+
+        .receipt {
+            position: relative;
+            width: 400px;
+            max-width: 100%;
+            background: var(--paper);
+            padding: 28px 26px 36px;
+            transform: rotate(-0.6deg);
+            box-shadow: 0 30px 60px -10px rgba(0, 0, 0, .55), 0 0 0 1px rgba(0, 0, 0, .04);
+        }
+
+        .receipt::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -13px;
+            height: 13px;
+            background:
+                linear-gradient(135deg, var(--paper) 50%, transparent 50%),
+                linear-gradient(45deg, var(--paper) 50%, transparent 50%);
+            background-size: 16px 16px;
+            background-position: 0 0, 8px 0;
+            background-repeat: repeat-x;
+        }
+
+        .barcode {
+            height: 34px;
+            margin: 0 auto 10px;
+            width: 80%;
+            background-image: repeating-linear-gradient(90deg,
+                    var(--ink) 0px, var(--ink) 2px,
+                    transparent 2px, transparent 5px,
+                    var(--ink) 5px, var(--ink) 6px,
+                    transparent 6px, transparent 11px,
+                    var(--ink) 11px, var(--ink) 14px,
+                    transparent 14px, transparent 16px);
+        }
+
+        .barcode-num {
+            text-align: center;
+            font-size: 10px;
+            letter-spacing: 3px;
+            color: var(--ink-soft);
+            margin-bottom: 18px;
+        }
+
+        header {
+            text-align: center;
+        }
+
+        .expence-ledger {
+            font-weight: 700;
+            font-size: 20px;
+            letter-spacing: 3px;
+        }
+
+        .info {
+            margin-top: 4px;
+            font-size: 11px;
+            color: var(--ink-soft);
+            letter-spacing: 1px;
+        }
+
+        .divider {
+            border-top: 1px dashed var(--line);
+            margin: 18px 0;
+        }
+
+        .entry-form .row {
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        .entry-form .row.split {
+            display: flex;
+            gap: 8px;
+        }
+
+        .entry-form .input-discription {
+            margin-bottom: 10px;
+        }
+
+        .entry-form .input {
+            display: flex;
+            gap: 8px;
+        }
+
+        input,
+        select,
+        button {
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            background: #fffdf8;
+            border: 1px solid var(--line);
+            color: var(--ink);
+            padding: 8px 9px;
+            width: 100%;
+        }
+
+        input:focus,
+        select:focus,
+        button:focus-visible {
+            outline: 2px solid var(--ink);
+            outline-offset: 1px;
+        }
+
+        select {
+            flex: 0 0 38%;
+        }
+
+        input#amount {
+            flex: 1;
+        }
+
+        .type-toggle {
+            align-items: center;
+            font-size: 11px;
+            color: var(--ink-soft);
+        }
+
+        .type-toggle label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            width: auto;
+            white-space: nowrap;
+        }
+
+        .type-toggle input[type=radio] {
+            width: auto;
+            margin: 0;
+        }
+
+        .type-toggle button {
+            margin-left: auto;
+            background: var(--ink);
+            color: var(--paper);
+            border: none;
+            font-weight: 700;
+            letter-spacing: 1px;
+            cursor: pointer;
+            width: auto;
+            padding: 8px 14px;
+            transition: opacity .15s;
+        }
+
+        .type-toggle button:hover {
+            opacity: .8;
+        }
+
+        .items {
+            margin-top: 14px;
+            min-height: 24px;
+        }
+
+        .item-row {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            font-size: 12.5px;
+            padding: 5px 0;
+        }
+
+        .item-row .desc {
+            white-space: nowrap;
+        }
+
+        .item-row .sub {
+            font-size: 9.5px;
+            color: var(--ink-soft);
+            letter-spacing: .5px;
+        }
+
+        .item-row .leader {
+            flex: 1;
+            border-bottom: 1px dotted var(--ink-soft);
+            transform: translateY(-3px);
+            min-width: 10px;
+        }
+
+        .item-row .amt {
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .item-row .amt.income {
+            color: var(--green);
+        }
+
+        .item-row .amt.expense {
+            color: var(--rust);
+        }
+
+        .item-row .del {
+            width: auto;
+            border: none;
+            background: none;
+            color: var(--ink-soft);
+            cursor: pointer;
+            padding: 0 0 0 6px;
+            font-size: 13px;
+            line-height: 1;
+        }
+
+        .item-row .del:hover {
+            color: var(--rust);
+        }
+
+        .totals .line {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12.5px;
+            padding: 3px 0;
+            color: var(--ink-soft);
+        }
+
+        .totals .line.balance {
+            color: var(--ink);
+            font-weight: 700;
+            font-size: 15px;
+            padding-top: 8px;
+            border-top: 1px solid var(--line);
+            margin-top: 6px;
+        }
+
+        .footer-msg {
+            text-align: center;
+            font-size: 10px;
+            letter-spacing: 3px;
+            color: var(--ink-soft);
+            margin-top: 22px;
+        }
+
+        @media (max-width: 460px) {
+            .receipt {
+                width: 92vw;
+                padding: 22px 16px 30px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="receipt" id="receipt">
+        <div class="barcode"></div>
+        <div class="barcode-num">0042 7991 0036</div>
+        <header>
+            <div class="expence-ledger">EXPENSE LEDGER</div>
+            <div class="info">No. 00427 &middot; <span id="todayDate"></span></div>
+        </header>
+        <div class="divider"></div>
+        <form class="entry-form" id="txForm">
+            <div class="input-discription">
+                <input type="text" id="desc" placeholder="Item description" maxlength="40" required>
+            </div>
+            <div class="input">
+                <input type="number" id="amount" placeholder="0.00" step="0.01" min="0.01" required>
+                <select id="category">
+                    <option>Food</option>
+                    <option>Transport</option>
+                    <option>Bills</option>
+                    <option>Shopping</option>
+                    <option>Entertainment</option>
+                    <option>Other</option>
+                </select>
+            </div>
+            <div class="row split type-toggle">
+                <label><input type="radio" name="type" value="expense" checked> Expense</label>
+                <label><input type="radio" name="type" value="income"> Income</label>
+                <button id="add" type="button">+ ADD</button>
+            </div>
+        </form>
+        <div class="divider"></div>
+        <div class="items" id="itemsList"></div>
+        <div class="divider"></div>
+        <div class="totals">
+            <div class="line"><span>Income</span><span id="totalIncome">$0.00</span></div>
+            <div class="line"><span>Expenses</span><span id="totalExpense">$0.00</span></div>
+            <div class="line balance"><span>BALANCE</span><span id="balance">$0.00</span></div>
+        </div>
+        <div class="divider"></div>
+        <div class="footer-msg">— THANK YOU FOR TRACKING —</div>
+    </div>
+
+
+</body>
+<script>
+
+    let transactions =
+        JSON.parse(localStorage.getItem("transactions")) || [];
+
+    let nextId =
+        transactions.length > 0
+            ? Math.max(...transactions.map(t => t.id)) + 1
+            : 1;
+
+
+    const descInput = document.getElementById("desc");
+    const amountInput = document.getElementById("amount");
+    const categoryInput = document.getElementById("category");
+    const addBtn = document.getElementById("add");
+    const itemsList = document.getElementById("itemsList");
+
+    const totalIncomeEl = document.getElementById("totalIncome");
+    const totalExpenseEl = document.getElementById("totalExpense");
+    const balanceEl = document.getElementById("balance");
+    const todayDateEl = document.getElementById("todayDate");
+
+
+    const fmt = num => Number(num).toFixed(2);
+
+    const escapeHtml = (str) => {
+        if (!str) return "";
+        return str
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    };
+
+    function getFormattedDate() {
+        const today = new Date();
+
+        const dd = String(today.getDate()).padStart(2, "0");
+        const mm = String(today.getMonth() + 1).padStart(2, "0");
+        const yyyy = today.getFullYear();
+
+        return `${dd}/${mm}/${yyyy}`;
+    }
+
+    todayDateEl.innerText = getFormattedDate();
+
+
+    function saveToLocalStorage() {
+        localStorage.setItem(
+            "transactions",
+            JSON.stringify(transactions)
+        );
+    }
+
+
+    function renderItems() {
+        const sorted = [...transactions].sort((a, b) => b.id - a.id);
+
+        if (sorted.length === 0) {
+            itemsList.innerHTML = `
+                <div style="text-align:center;font-size:11px;color:var(--ink-soft);padding:14px 0;">
+                    No entries yet — add one above.
+                </div>
+            `;
+            return;
+        }
+
+        itemsList.innerHTML = sorted.map(t => `
+            <div class="item-row">
+                <span class="desc">${escapeHtml(t.desc)}</span>
+                <span class="sub">
+                    ${t.type === "income"
+                ? "INCOME"
+                : t.category.toUpperCase()}
+                </span>
+                <span class="leader"></span>
+                <span class="amt ${t.type}">
+                    ${t.type === "income" ? "+" : "-"}${fmt(t.amount)}
+                </span>
+                <button class="del" data-id="${t.id}">
+                    ×
+                </button>
+            </div>
+        `).join("");
+    }
+
+    function updateSummary() {
+        const income = transactions
+            .filter(t => t.type === "income")
+            .reduce((sum, t) => sum + t.amount, 0);
+
+        const expense = transactions
+            .filter(t => t.type === "expense")
+            .reduce((sum, t) => sum + t.amount, 0);
+
+        const balance = income - expense;
+
+        totalIncomeEl.innerText = `$${fmt(income)}`;
+        totalExpenseEl.innerText = `$${fmt(expense)}`;
+        balanceEl.innerText = `$${fmt(balance)}`;
+    }
+
+    function refreshUI() {
+        saveToLocalStorage();
+        renderItems();
+        updateSummary();
+    }
+
+
+    function addTransaction() {
+        const desc = descInput.value.trim();
+        const amount = Number(amountInput.value);
+        const category = categoryInput.value;
+        const checkedRadio = document.querySelector(
+            'input[name="type"]:checked'
+        );
+        const type = checkedRadio.value;
+
+
+        if (!desc) {
+            alert("Please enter description");
+            return;
+        }
+
+        if (!amount || amount <= 0) {
+            alert("Enter valid amount");
+            return;
+        }
+
+        const transaction = {
+            id: nextId++,
+            desc,
+            amount,
+            category,
+            type,
+            date: getFormattedDate()
+        };
+
+        transactions.push(transaction);
+
+        descInput.value = "";
+        amountInput.value = "";
+
+        refreshUI();
+    }
+
+
+    function deleteTransaction(id) {
+        transactions = transactions.filter(t => t.id !== id);
+        refreshUI();
+    }
+
+
+    addBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        addTransaction();
+    });
+
+    itemsList.addEventListener("click", (e) => {
+        if (e.target.classList.contains("del")) {
+            const id = Number(e.target.dataset.id);
+            deleteTransaction(id);
+        }
+    });
+
+
+    refreshUI();
+</script>
+
+</html>
